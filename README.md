@@ -25,7 +25,7 @@ To make the application run you can start the main class `DemoApplication`.
 ### Test the endpoints
 There are a couple of REST endpoints you can try to call.
 
-To create new Project with name "Project" and creator user "Andrey" call:
+To ru.quipy.logic.commands.create new Project with name "Project" and creator user "Andrey" call:
 
 ```
 POST http://localhost:8080/projects/Project?creatorId="Andrey"
