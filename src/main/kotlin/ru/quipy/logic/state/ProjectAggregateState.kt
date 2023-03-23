@@ -25,6 +25,7 @@ class ProjectAggregateState : AggregateState<UUID, ProjectAggregate> {
         creatorId = event.creatorId
         updatedAt = createdAt
         participants.add(event.creatorId)
+        taskStatuses[event.defaultTaskStatusEntity.id] = event.defaultTaskStatusEntity
     }
 
     @StateTransitionFunc

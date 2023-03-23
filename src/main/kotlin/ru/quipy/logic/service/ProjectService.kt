@@ -10,7 +10,6 @@ import ru.quipy.logic.state.TaskStatusEntity.Companion.DEFAULT_TASK_STATUS_NAME
 import ru.quipy.logic.commands.*
 import ru.quipy.logic.state.ProjectAggregateState
 import ru.quipy.logic.state.TaskAggregateState
-import ru.quipy.logic.state.TaskStatusEntity.Companion.DEFAULT_TASK_STATUS_COLOR
 import ru.quipy.logic.state.UserAggregateState
 import java.util.*
 
@@ -23,12 +22,7 @@ class ProjectService(
 
     fun createProject(projectName: String, creatorId: UUID): ProjectCreatedEvent {
         checkUserExists(creatorId)
-        val projectCreatedState = projectEsService.create { it.create(UUID.randomUUID(), projectName, creatorId) }
-        createTaskStatus(
-            projectCreatedState.projectId,
-            TaskStatusDto(DEFAULT_TASK_STATUS_NAME, DEFAULT_TASK_STATUS_COLOR)
-        )
-        return projectCreatedState
+        return projectEsService.create { it.create(UUID.randomUUID(), projectName, creatorId) }
     }
 
     fun getProject(projectId: UUID): ProjectAggregateState? {
@@ -49,7 +43,6 @@ class ProjectService(
     }
 
     fun updateProjectName(projectId: UUID, newName: String): ProjectNameUpdatedEvent? {
-        if (getProjectInternal(projectId).projectName == newName) return null
         return projectEsService.update(projectId) {
             it.updateProjectName(newName)
         }
@@ -57,8 +50,6 @@ class ProjectService(
 
     fun leaveProject(projectId: UUID, userId: UUID): UserLeftProjectEvent {
         checkUserExists(userId)
-        val projectState = getProjectInternal(projectId)
-        if (projectState.creatorId == userId) throw TaskProjectException("Creator can't leave his project")
         return projectEsService.update(projectId) {
             it.leaveProject(userId)
         }
@@ -66,8 +57,6 @@ class ProjectService(
 
     fun joinToProject(projectId: UUID, userId: UUID): UserJoinedToProjectEvent? {
         checkUserExists(userId)
-        val projectState = getProjectInternal(projectId)
-        if (projectState.participants.contains(userId)) return null;
         return projectEsService.update(projectId) {
             it.joinUserToProject(userId)
         }
@@ -80,12 +69,9 @@ class ProjectService(
     }
 
     fun orderTasks(projectId: UUID, newOrderStatuses: OrderedStatusesDto): TaskStatusesOrderedEvent {
-        val projectState = getProjectInternal(projectId)
-        if (projectState.taskStatuses.keys.containsAll(newOrderStatuses.orderedStatuses)) {
-            return projectEsService.update(projectId) {
-                it.orderTasks(newOrderStatuses.orderedStatuses)
-            }
-        } else throw TaskProjectException("invalid order statuses list")
+        return projectEsService.update(projectId) {
+            it.orderTasks(newOrderStatuses.orderedStatuses)
+        }
     }
 
     fun deleteTaskStatus(projectId: UUID, taskStatusId: UUID): TaskStatusDeletedEvent {
