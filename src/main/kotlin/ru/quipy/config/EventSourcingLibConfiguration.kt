@@ -5,13 +5,13 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import ru.quipy.api.ProjectAggregate
+import ru.quipy.api.TaskAggregate
+import ru.quipy.api.UserAggregate
 import ru.quipy.core.EventSourcingServiceFactory
-import ru.quipy.logic.ProjectAggregateState
-import ru.quipy.projections.AnnotationBasedProjectEventsSubscriber
-import ru.quipy.streams.AggregateEventStreamManager
-import ru.quipy.streams.AggregateSubscriptionsManager
+import ru.quipy.logic.state.ProjectAggregateState
+import ru.quipy.logic.state.TaskAggregateState
+import ru.quipy.logic.state.UserAggregateState
 import java.util.*
-import javax.annotation.PostConstruct
 
 /**
  * This files contains some configurations that you might want to have in your project. Some configurations are
@@ -39,38 +39,18 @@ class EventSourcingLibConfiguration {
     private val logger = LoggerFactory.getLogger(EventSourcingLibConfiguration::class.java)
 
     @Autowired
-    private lateinit var subscriptionsManager: AggregateSubscriptionsManager
-
-    @Autowired
-    private lateinit var projectEventSubscriber: AnnotationBasedProjectEventsSubscriber
-
-    @Autowired
     private lateinit var eventSourcingServiceFactory: EventSourcingServiceFactory
 
-    @Autowired
-    private lateinit var eventStreamManager: AggregateEventStreamManager
-
     /**
-     * Use this object to create/update the aggregate
+     * Use this object to ru.quipy.logic.commands.create/update the aggregate
      */
     @Bean
     fun projectEsService() = eventSourcingServiceFactory.create<UUID, ProjectAggregate, ProjectAggregateState>()
 
-    @PostConstruct
-    fun init() {
-        // Demonstrates how to explicitly subscribe the instance of annotation based subscriber to some stream. See the [AggregateSubscriptionsManager]
-        subscriptionsManager.subscribe<ProjectAggregate>(projectEventSubscriber)
+    @Bean
+    fun userEsService() = eventSourcingServiceFactory.create<UUID, UserAggregate, UserAggregateState>()
 
-        // Demonstrates how you can set up the listeners to the event stream
-        eventStreamManager.maintenance {
-            onRecordHandledSuccessfully { streamName, eventName ->
-                logger.info("Stream $streamName successfully processed record of $eventName")
-            }
-
-            onBatchRead { streamName, batchSize ->
-                logger.info("Stream $streamName read batch size: $batchSize")
-            }
-        }
-    }
+    @Bean
+    fun taskEsService() = eventSourcingServiceFactory.create<UUID, TaskAggregate, TaskAggregateState>()
 
 }
